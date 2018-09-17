@@ -1,4 +1,4 @@
-<?php
+
 
 <?php
 require('./conector.php');
@@ -25,7 +25,4 @@ if ($response['msg']=='OK') {
  $response['getData'] = "OK";
 }
 echo json_encode($response);
- ?>
-
-
  ?>

@@ -19,26 +19,28 @@ class EventsManager {
           success: (data) =>{
             if (data.msg=="OK") {
               this.poblarCalendario(data.eventos)
+              return data.eventos
             }else {
               alert(data.msg)
               window.location.href = 'index.html';
             }
           },
           error: function(){
-            alert("error en la comunicación con el servidor");
+            alert("error en la comunicación conel servidor");
           }
         })
 
     }
 
     poblarCalendario(eventos) {
+      var d = new Date();
         $('.calendario').fullCalendar({
             header: {
         		left: 'prev,next today',
         		center: 'title',
         		right: 'month,agendaWeek,basicDay'
         	},
-        	defaultDate: '2016-11-01',
+        	defaultDate: d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(),
         	navLinks: true,
         	editable: true,
         	eventLimit: true,
@@ -70,58 +72,66 @@ class EventsManager {
         })
     }
 
-    anadirEvento(){
-      var form_data = new FormData();
-      form_data.append('titulo', $('#titulo').val())
-      form_data.append('start_date', $('#start_date').val())
-      form_data.append('allDay', document.getElementById('allDay').checked)
-      if (!document.getElementById('allDay').checked) {
-        form_data.append('end_date', $('#end_date').val())
-        form_data.append('end_hour', $('#end_hour').val())
-        form_data.append('start_hour', $('#start_hour').val())
-      }else {
-        form_data.append('end_date', "")
-        form_data.append('end_hour', "")
-        form_data.append('start_hour', "")
-      }
-      $.ajax({
-        url: '../server/new_event.php',
-        dataType: "json",
-        cache: false,
-        processData: false,
-        contentType: false,
-        data: form_data,
-        type: 'POST',
-        success: (data) =>{
-          if (data.msg=="OK") {
-            alert('Se ha añadido el evento exitosamente')
-            if (document.getElementById('allDay').checked) {
-              $('.calendario').fullCalendar('renderEvent', {
-                title: $('#titulo').val(),
-                start: $('#start_date').val(),
-                allDay: true
-              })
-            }else {
-              $('.calendario').fullCalendar('renderEvent', {
-                title: $('#titulo').val(),
-                start: $('#start_date').val()+" "+$('#start_hour').val(),
-                allDay: false,
-                end: $('#end_date').val()+" "+$('#end_hour').val()
-              })
-            }
-
-
-
-
-          }else {
-            alert(data.msg)
-          }
-        },
-        error: function(){
-          alert("error en la comunicación con el servidor");
+        anadirEvento(){
+      if(this.validarForm() == true){;
+        var form_data = new FormData();
+        form_data.append('titulo', $('#titulo').val())
+        form_data.append('start_date', $('#start_date').val())
+        form_data.append('allDay', document.getElementById('allDay').checked)
+        if (!document.getElementById('allDay').checked) {
+          form_data.append('end_date', $('#end_date').val())
+          form_data.append('end_hour', $('#end_hour').val())
+          form_data.append('start_hour', $('#start_hour').val())
+        }else {
+          form_data.append('end_date', "")
+          form_data.append('end_hour', "")
+          form_data.append('start_hour', "")
         }
-      })
-
+        $.ajax({
+          url: '../server/new_event.php',
+          dataType: "json",
+          cache: false,
+          processData: false,
+          contentType: false,
+          data: form_data,
+          type: 'POST',
+          success: (data) =>{
+            if (data.msg=="OK") {
+              if (document.getElementById('allDay').checked) {
+                $('.calendario').fullCalendar('renderEvent', {
+                  id:data.id,
+                  title: $('#titulo').val(),
+                  start: $('#start_date').val(),
+                  allDay: true
+                })
+              }else {
+                $('.calendario').fullCalendar('renderEvent', {
+                  id:data.id,
+                  title: $('#titulo').val(),
+                  start: $('#start_date').val()+"T"+$('#start_hour').val(),
+                  allDay: false,
+                  end: $('#end_date').val()+"T"+$('#end_hour').val()
+                })
+              }
+              alert('Se ha añadido el evento exitosamente ')
+            }else {
+              alert(data.msg)
+            }
+          },
+          error: function(data){
+            alert("Ha ocurrido un error en la comunicación con el servidor");
+          }
+        })
+      }else{
+        alert('Título y fecha de inicio no pueden ser vacios')
+      }
+    }
+    validarForm(){
+      if($('#titulo').val() != "" &&  $('#start_date').val() != "" ){
+        return true;
+      }else{
+        return false;
+      }
     }
 
     eliminarEvento(event, jsEvent){
@@ -204,9 +214,23 @@ $(function(){
     event.preventDefault()
     e.anadirEvento()
   })
+
+  $('#logout').on('click', function(e){
+    logout();
+  })
 });
 
 
+function logout(){
+  $.ajax({
+    url:'../server/logout.php',
+    type: 'post',
+    dataType: 'json',
+    success: function(data){
+      window.location.href = './index.html'
+    },
+  })
+}
 
 function initForm(){
   $('#start_date, #titulo, #end_date').val('');
